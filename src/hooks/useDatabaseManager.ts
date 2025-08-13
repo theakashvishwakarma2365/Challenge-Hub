@@ -135,10 +135,21 @@ export function useDatabaseManager() {
       // Calculate current day based on start date
       const currentDay = getCurrentDay(challengeData.startDate);
       
+      // Set initial status based on start date
+      let initialStatus: Challenge['status'];
+      if (currentDay < 1) {
+        initialStatus = 'draft'; // Future start date
+      } else if (currentDay > challengeData.totalDays) {
+        initialStatus = 'completed'; // Past end date
+      } else {
+        initialStatus = challengeData.status || 'active'; // Use provided status or default to active
+      }
+      
       const newChallenge: Challenge = {
         ...challengeData,
         id: uuidv4(),
         currentDay: Math.max(1, currentDay), // Ensure minimum day is 1
+        status: initialStatus,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -401,7 +412,15 @@ export function useDatabaseManager() {
 
   // Helper methods
   const getActiveChallenge = () => {
-    return challenges.find(c => c.status === 'active') || null;
+    // Find active challenge or draft challenge that should be active today
+    return challenges.find(c => {
+      if (c.status === 'active') return true;
+      if (c.status === 'draft') {
+        const currentDay = getCurrentDay(c.startDate);
+        return currentDay >= 1 && currentDay <= c.totalDays;
+      }
+      return false;
+    }) || null;
   };
 
   const getTodayProgress = (challengeId: string) => {

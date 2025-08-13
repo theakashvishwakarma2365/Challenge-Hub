@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Video, Play, Plus, Calendar, MessageCircle, Star } from 'lucide-react';
 import { Challenge, VideoReflection, ReflectionQuestion } from '../../types';
 
@@ -40,7 +41,7 @@ const VideoReflectionLog: React.FC<VideoReflectionLogProps> = ({
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold">Daily Logs</h2>
+        <h2 className="text-2xl font-bold">How was your day?</h2>
         <button
           onClick={() => setShowAddReflection(true)}
           className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center gap-2 transition-colors"
@@ -140,6 +141,10 @@ const VideoReflectionLog: React.FC<VideoReflectionLogProps> = ({
           onSave={(reflection) => {
             onAddReflection(reflection);
             setShowAddReflection(false);
+            toast.success('✨ Daily reflection saved!', {
+              duration: 3000,
+              position: 'top-center',
+            });
           }}
           onCancel={() => setShowAddReflection(false)}
         />
@@ -206,8 +211,8 @@ const ReflectionModal: React.FC<ReflectionModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="p-6 overflow-y-auto flex-1 modal-scroll">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col mb-20 md:mb-0">
+        <div className="p-6 overflow-y-auto flex-1 modal-scroll pb-4">
           <h2 className="text-xl font-bold mb-4 sticky top-0 bg-white z-10 pb-2 border-b">Record Day {currentDay} Daily Log</h2>
           
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -335,18 +340,18 @@ const ReflectionModal: React.FC<ReflectionModalProps> = ({
         </div>
         
         {/* Fixed footer with buttons */}
-        <div className="p-6 border-t bg-white">
+        <div className="p-6 border-t bg-white pb-24 md:pb-6">
           <div className="flex gap-3">
             <button
               onClick={handleSubmit}
-              className="flex-1 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
+              className="flex-1 bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition-colors font-medium"
             >
               Save Daily Log
             </button>
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
             >
               Cancel
             </button>

@@ -1,29 +1,52 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Play, Pause, Calendar, Target, Clock, FileText, Download } from 'lucide-react';
-import { Challenge, CommitmentLetter } from '../../types';
-import { formatDate, getDaysBetween, getCurrentDay, getDaysRemaining } from '../../utils/dateUtils';
+import { Plus, Trash2, Play, Pause, Calendar, Target, Clock, FileText, Download } from 'lucide-react';
+import { Challenge } from '../../types';
+import { formatDate, getCurrentDay, getDaysRemaining } from '../../utils/dateUtils';
 import { generateCommitmentLetter, downloadCommitmentLetter } from '../../utils/exportUtils';
+import StartCommitmentModal from './CommitmentModal';
 
 interface ChallengeManagerProps {
   challenges: Challenge[];
   activeChallenge: Challenge | null;
+  userProfile: { name: string } | null;
   onCreateChallenge: (challenge: Omit<Challenge, 'id' | 'createdAt' | 'updatedAt' | 'currentDay'>) => void;
   onUpdateChallenge: (id: string, updates: Partial<Challenge>) => void;
   onDeleteChallenge: (id: string) => void;
   onNavigate: (tab: string) => void;
+  onOpenCreateModal?: () => void;
 }
 
 const ChallengeManager: React.FC<ChallengeManagerProps> = ({
   challenges,
   activeChallenge,
+  userProfile,
   onCreateChallenge,
   onUpdateChallenge,
   onDeleteChallenge,
   onNavigate,
+  onOpenCreateModal,
 }) => {
   const [showCommitmentModal, setShowCommitmentModal] = useState<Challenge | null>(null);
+  const [showCommitmentLetter, setShowCommitmentLetter] = useState<Challenge | null>(null);
 
   const handleStatusChange = (challengeId: string, newStatus: Challenge['status']) => {
+    const challenge = challenges.find(c => c.id === challengeId);
+    
+    console.log('HandleStatusChange called:', { challengeId, newStatus, challenge, userProfile }); // Debug log
+    
+    // If trying to activate a challenge, show commitment modal first
+    if (newStatus === 'active' && challenge && challenge.status !== 'active') {
+      console.log('Showing commitment modal for challenge:', challenge.name); // Debug log
+      // If no user profile, use a default name
+      if (!userProfile || !userProfile.name.trim()) {
+        // Still show modal but with default name
+        setShowCommitmentModal(challenge);
+        return;
+      }
+      setShowCommitmentModal(challenge);
+      return;
+    }
+    
     // If setting to active, deactivate other challenges
     if (newStatus === 'active') {
       challenges.forEach(challenge => {
@@ -33,6 +56,21 @@ const ChallengeManager: React.FC<ChallengeManagerProps> = ({
       });
     }
     onUpdateChallenge(challengeId, { status: newStatus });
+  };
+
+  const handleCommitmentComplete = () => {
+    if (showCommitmentModal) {
+      // Deactivate other challenges
+      challenges.forEach(challenge => {
+        if (challenge.id !== showCommitmentModal.id && challenge.status === 'active') {
+          onUpdateChallenge(challenge.id, { status: 'paused' });
+        }
+      });
+      
+      // Activate the committed challenge
+      onUpdateChallenge(showCommitmentModal.id, { status: 'active' });
+      setShowCommitmentModal(null);
+    }
   };
 
   const getStatusColor = (status: Challenge['status']) => {
@@ -55,10 +93,10 @@ const ChallengeManager: React.FC<ChallengeManagerProps> = ({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold">Challenge Management</h2>
         <button
-          onClick={() => onNavigate('create')}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
+          onClick={() => onOpenCreateModal ? onOpenCreateModal() : onNavigate('create')}
+          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 flex items-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 font-medium"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-5 h-5" />
           Create New Challenge
         </button>
       </div>
@@ -78,7 +116,7 @@ const ChallengeManager: React.FC<ChallengeManagerProps> = ({
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setShowCommitmentModal(activeChallenge)}
+                onClick={() => setShowCommitmentLetter(activeChallenge)}
                 className="bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"
               >
                 <FileText className="w-4 h-4" />
@@ -113,7 +151,6 @@ const ChallengeManager: React.FC<ChallengeManagerProps> = ({
         ) : (
           challenges.map((challenge) => {
             const currentDay = getCurrentDay(challenge.startDate);
-            const daysRemaining = getDaysRemaining(challenge.endDate);
             const progressPercentage = Math.round((currentDay / challenge.totalDays) * 100);
 
             return (
@@ -197,7 +234,7 @@ const ChallengeManager: React.FC<ChallengeManagerProps> = ({
                       ) : null}
 
                       <button
-                        onClick={() => setShowCommitmentModal(challenge)}
+                        onClick={() => setShowCommitmentLetter(challenge)}
                         className="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 flex items-center gap-2 transition-colors"
                       >
                         <FileText className="w-4 h-4" />
@@ -230,29 +267,53 @@ const ChallengeManager: React.FC<ChallengeManagerProps> = ({
         )}
       </div>
 
-      {/* Commitment Modal */}
+      {/* Commitment Modal for Starting Challenge */}
       {showCommitmentModal && (
-        <CommitmentModal
-          challenge={showCommitmentModal}
-          onClose={() => setShowCommitmentModal(null)}
-          onDownload={() => {
-            handleDownloadCommitment(showCommitmentModal);
-            setShowCommitmentModal(null);
-          }}
+        <StartCommitmentModal
+          userName={userProfile?.name || 'Challenger'}
+          challengeName={showCommitmentModal.name}
+          isOpen={true}
+          onCommit={handleCommitmentComplete}
+          onCancel={() => setShowCommitmentModal(null)}
+        />
+      )}
+      
+      {/* Debug info */}
+      {process.env.NODE_ENV === 'development' && showCommitmentModal && (
+        <div style={{
+          position: 'fixed',
+          top: '10px',
+          right: '10px',
+          background: 'red',
+          color: 'white',
+          padding: '10px',
+          zIndex: 9999,
+          fontSize: '12px'
+        }}>
+          Modal should be showing: {showCommitmentModal.name}
+        </div>
+      )}
+
+      {/* Commitment Letter Modal */}
+      {showCommitmentLetter && (
+        <CommitmentLetterModal
+          challenge={showCommitmentLetter}
+          onClose={() => setShowCommitmentLetter(null)}
+          onDownload={() => handleDownloadCommitment(showCommitmentLetter)}
         />
       )}
     </div>
   );
 };
 
-// Commitment Modal Component
-interface CommitmentModalProps {
+// Commitment Letter Modal Component
+interface CommitmentLetterModalProps {
   challenge: Challenge;
   onClose: () => void;
   onDownload: () => void;
 }
 
-const CommitmentModal: React.FC<CommitmentModalProps> = ({ challenge, onClose, onDownload }) => {
+const CommitmentLetterModal: React.FC<CommitmentLetterModalProps> = ({ challenge, onClose, onDownload }) => {
   const commitmentLetter = generateCommitmentLetter(challenge);
 
   return (

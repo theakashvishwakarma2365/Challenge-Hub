@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, CheckCircle, Video, TrendingUp, Plus, Calendar, Settings } from 'lucide-react';
+import { Target, CheckCircle, Video, TrendingUp, Calendar } from 'lucide-react';
 
 interface NavigationProps {
   activeTab: string;
@@ -17,10 +17,9 @@ const Navigation: React.FC<NavigationProps> = ({
   const tabs = [
     { id: 'dashboard', name: 'Dashboard', icon: Target },
     { id: 'tasks', name: 'Tasks', icon: CheckCircle },
-    { id: 'video', name: 'Video Log', icon: Video },
+    { id: 'video', name: 'How was your day?', icon: Video },
     { id: 'progress', name: 'Progress', icon: TrendingUp },
     { id: 'challenges', name: 'Challenges', icon: Calendar },
-    { id: 'create', name: 'Create', icon: Plus },
   ];
 
   const handleTabClick = (tabId: string) => {
@@ -31,22 +30,28 @@ const Navigation: React.FC<NavigationProps> = ({
   return (
     <>
       {/* Desktop Navigation */}
-      <div className="hidden md:block bg-white border-b">
+      <div className="hidden md:block bg-white/90 backdrop-blur-lg border-b border-white/20 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
+          <div className="flex space-x-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => handleTabClick(tab.id)}
-                  className={`flex items-center gap-2 px-3 py-4 border-b-2 font-medium text-sm transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-4 rounded-t-xl font-medium text-sm transition-all duration-200 ${
                     activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform translate-y-1'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <div className={`p-1 rounded-lg ${
+                    activeTab === tab.id ? 'bg-white/20' : 'bg-gray-100'
+                  }`}>
+                    <Icon className={`w-4 h-4 ${
+                      activeTab === tab.id ? 'text-white' : 'text-gray-600'
+                    }`} />
+                  </div>
                   {tab.name}
                 </button>
               );

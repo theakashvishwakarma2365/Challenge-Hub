@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { Plus, Edit2, Trash2, Clock, Flag, CheckCircle, Heart, Zap, Book, Video } from 'lucide-react';
 import { Challenge, Task, DailyProgress } from '../../types';
 
@@ -43,7 +44,9 @@ const TaskManager: React.FC<TaskManagerProps> = ({
 
   const toggleTask = (taskId: string) => {
     const newCompletedTasks = new Set(completedTasks);
-    if (newCompletedTasks.has(taskId)) {
+    const wasCompleted = newCompletedTasks.has(taskId);
+    
+    if (wasCompleted) {
       newCompletedTasks.delete(taskId);
     } else {
       newCompletedTasks.add(taskId);
@@ -52,6 +55,25 @@ const TaskManager: React.FC<TaskManagerProps> = ({
     
     if (activeChallenge) {
       onRecordProgress(activeChallenge.id, Array.from(newCompletedTasks));
+      
+      // Show toast notification
+      if (!wasCompleted) {
+        const task = activeChallenge.tasks.find(t => t.id === taskId);
+        toast.success(`✅ ${task?.name || 'Task'} completed!`, {
+          duration: 2000,
+          position: 'top-center',
+        });
+        
+        // Special celebration if all tasks are done
+        if (newCompletedTasks.size === activeChallenge.tasks.length) {
+          setTimeout(() => {
+            toast.success('🎉 All tasks completed for today! Amazing work!', {
+              duration: 4000,
+              position: 'top-center',
+            });
+          }, 500);
+        }
+      }
     }
   };
 
@@ -246,7 +268,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onSave, onCancel }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 pb-24 md:pb-4 z-[9999]">
       <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
         <div className="p-6 border-b bg-white">
           <h2 className="text-xl font-bold">
@@ -349,14 +371,14 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onSave, onCancel }) => {
           <div className="flex gap-3">
             <button
               onClick={handleSubmit}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
               {task ? 'Update Task' : 'Add Task'}
             </button>
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
             >
               Cancel
             </button>

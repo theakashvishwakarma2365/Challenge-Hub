@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Calendar, Target, Clock, FileText, Save, X, ArrowRight, ArrowLeft, CheckCircle, Palette, Zap } from 'lucide-react';
 import { Challenge, Task } from '../../types';
+import CommitmentModal from '../Challenges/CommitmentModal';
 
-interface ChallengeCreatorProps {
+interface StepByChallengeCreatorProps {
   onCreateChallenge: (challenge: Omit<Challenge, 'id' | 'createdAt' | 'updatedAt' | 'currentDay'>) => void;
   onCancel?: () => void;
+  isModal?: boolean;
+  userProfile?: { name: string } | null;
 }
 
-const ChallengeCreator: React.FC<ChallengeCreatorProps> = ({ onCreateChallenge, onCancel }) => {
+const StepByChallengeCreator: React.FC<StepByChallengeCreatorProps> = ({ onCreateChallenge, onCancel, isModal = false, userProfile }) => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [showCommitmentModal, setShowCommitmentModal] = useState(false);
+  const [pendingChallenge, setPendingChallenge] = useState<any>(null);
   const totalSteps = 4;
 
   const [formData, setFormData] = useState({
@@ -94,7 +99,23 @@ const ChallengeCreator: React.FC<ChallengeCreatorProps> = ({ onCreateChallenge, 
       icon: formData.icon,
     };
 
-    onCreateChallenge(challenge);
+    // Store challenge and show commitment modal
+    setPendingChallenge(challenge);
+    setShowCommitmentModal(true);
+  };
+
+  const handleCommitmentComplete = () => {
+    if (pendingChallenge) {
+      onCreateChallenge(pendingChallenge);
+      setShowCommitmentModal(false);
+      setPendingChallenge(null);
+      if (onCancel) onCancel(); // Close the modal
+    }
+  };
+
+  const handleCommitmentCancel = () => {
+    setShowCommitmentModal(false);
+    setPendingChallenge(null);
   };
 
   const presetChallenges = [
@@ -148,7 +169,8 @@ const ChallengeCreator: React.FC<ChallengeCreatorProps> = ({ onCreateChallenge, 
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold">Create New Challenge</h2>
         {onCancel && (
@@ -544,7 +566,19 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({ onSave, onCancel }) => {
         </div>
       </div>
     </div>
+
+    {/* Commitment Modal */}
+    {showCommitmentModal && pendingChallenge && (
+      <CommitmentModal
+        userName={userProfile?.name || 'Challenger'}
+        challengeName={pendingChallenge.name}
+        isOpen={showCommitmentModal}
+        onCommit={handleCommitmentComplete}
+        onCancel={handleCommitmentCancel}
+      />
+    )}
+    </>
   );
 };
 
-export default ChallengeCreator;
+export default StepByChallengeCreator;
